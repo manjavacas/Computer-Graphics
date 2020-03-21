@@ -183,7 +183,7 @@ if __name__ == '__main__':
         try:
             length = float(argv[3])
         except:
-            print('Error: third argument must be numeric')
+            print('Error: third argument must be a number')
             exit()
         extrude(argv[1], argv[2], length)
     else:
