@@ -4,6 +4,7 @@
 # Usage: ./extrude <input.obj> <output.obj> <length>
 # Antonio Manjavacas
 
+
 from sys import argv
 from math import pow, sqrt
 
@@ -161,29 +162,12 @@ def apply_extrusion(vertices, faces, length):
             new_faces.append(new_face)
 
         # Additional lateral faces
-        new_face = Face(v1, v2, new_v2)
-        if new_face not in new_faces:
-            new_faces.append(new_face)
-        
-        new_face = Face(v1, new_v1, new_v2)
-        if new_face not in new_faces:
-            new_faces.append(new_face)
-        
-        new_face = Face(v2, v3, new_v3)
-        if new_face not in new_faces:
-            new_faces.append(new_face)
-
-        new_face = Face(v2, new_v2, new_v3)
-        if new_face not in new_faces:
-            new_faces.append(new_face)
-
-        new_face = Face(v1, v3, new_v3)
-        if new_face not in new_faces:
-            new_faces.append(new_face)
-
-        new_face = Face(v1, new_v1, new_v3)
-        if new_face not in new_faces:
-            new_faces.append(new_face)
+        new_faces.append(Face(v1, v2, new_v2))
+        new_faces.append(Face(v1, new_v1, new_v2))
+        new_faces.append(Face(v2, v3, new_v3))
+        new_faces.append(Face(v2, new_v2, new_v3))
+        new_faces.append(Face(v1, v3, new_v3))
+        new_faces.append(Face(v1, new_v1, new_v3))
 
     return new_vertices, new_faces
 
@@ -221,15 +205,18 @@ def extrude(input_file, output_file, length):
 if __name__ == '__main__':
     if len(argv) != 4:
         print('Usage: ./extrude <input.obj> <output.obj> <length>')
-        #exit()
-        extrude('input.obj','output.obj',1)
+        exit()
     elif argv[1].endswith('.obj') and argv[2].endswith('.obj'):
         try:
             length = float(argv[3])
         except:
             print('Error: third argument must be a number')
             exit()
+        print('\n================ EXTRUSION ================\n')
+        print('Extruding ' + argv[1] + ' with length = ' + argv[3] + ' ...')
         extrude(argv[1], argv[2], length)
+        print('\nDone! Mesh saved in ' + argv[2])
+        print('\n===========================================\n')
     else:
-        print('Error: input and output files must have .obj extension')
+        print('> Error: input and output files must have .obj extension')
         exit()
