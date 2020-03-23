@@ -24,6 +24,12 @@ class Vertex:
     def __str__(self):
         return 'v' + ' ' + str(self.x) + ' ' + str(self.y) + ' ' + str(self.z)
 
+    def __eq__(self, v):
+        if isinstance(v, Vertex):
+            return self.x == v.x and self.y == v.y and self.z == v.z
+        else:
+            return False
+
 
 class Vector:
     def __init__(self, x, y, z):
@@ -52,6 +58,15 @@ class Face:
 
     def __str__(self):
         return 'f' + ' ' + str(self.v1.id) + ' ' + str(self.v2.id) + ' ' + str(self.v3.id)
+
+    def __eq__(self, f):
+        if isinstance(f, Face):
+            other_vertices = [f.v1, f.v2, f.v3]
+            return (self.v1 in other_vertices and
+                    self.v2 in other_vertices and
+                    self.v3 in other_vertices)
+        else:
+            return False
 
 
 def parse_obj(obj_file):
@@ -106,59 +121,87 @@ def apply_extrusion(vertices, faces, length):
               [0, 0, 1, t.z],
               [0, 0, 0, 1]]
 
-        # Generate new vertices
-        new_vertices = []
+        # GENERATE NEW VERTICES
+        new_face_vertices = []
 
         for v in face.vertices:
 
             vertex = [v.x, v.y, v.z, 1]
-            new_vertex = [0, 0, 0, 0]
+            new_vertex_coords = [0, 0, 0, 0]
 
             for i in range(len(TM)):
                 for j in range(len(TM[0])):
-                    new_vertex[i] += TM[i][j] * vertex[j]
+                    new_vertex_coords[i] += TM[i][j] * vertex[j]
 
-            new_vertices.append(
-                Vertex(ID_COUNTER, new_vertex[0], new_vertex[1], new_vertex[2]))
-            ID_COUNTER += 1
+            new_vertex = Vertex(
+                None, new_vertex_coords[0], new_vertex_coords[1], new_vertex_coords[2])
 
+            # Check if the vertex was already created
+            if new_vertex not in new_vertices:
+                new_vertex.id = ID_COUNTER
+                ID_COUNTER += 1
+                new_vertices.append(new_vertex)
+            else:
+                new_vertex = [v for v in new_vertices if v == new_vertex][0]
+
+            new_face_vertices.append(new_vertex)
+
+        # GENERATE NEW FACES
         v1 = face.v1
         v2 = face.v2
         v3 = face.v3
 
-        new_v1 = new_vertices[0]
-        new_v2 = new_vertices[1]
-        new_v3 = new_vertices[2]
+        new_v1 = new_face_vertices[0]
+        new_v2 = new_face_vertices[1]
+        new_v3 = new_face_vertices[2]
 
-        # Generate new face
-        new_faces.append(Face(new_v1, new_v2, new_v3))
+        # New frontal face
+        new_face = Face(new_v1, new_v2, new_v3)
+        if new_face not in new_faces:
+            new_faces.append(new_face)
 
-        # Additional edge faces (2 per edge)
-        new_faces.append(Face(v1, v2, new_v2))
-        new_faces.append(Face(v1, new_v1, new_v2))
+        # Additional lateral faces
+        new_face = Face(v1, v2, new_v2)
+        if new_face not in new_faces:
+            new_faces.append(new_face)
+        
+        new_face = Face(v1, new_v1, new_v2)
+        if new_face not in new_faces:
+            new_faces.append(new_face)
+        
+        new_face = Face(v2, v3, new_v3)
+        if new_face not in new_faces:
+            new_faces.append(new_face)
 
-        new_faces.append(Face(v2, v3, new_v3))
-        new_faces.append(Face(v3, new_v2, new_v3))
+        new_face = Face(v2, new_v2, new_v3)
+        if new_face not in new_faces:
+            new_faces.append(new_face)
 
-        new_faces.append(Face(v1, v3, new_v3))
-        new_faces.append(Face(v1, new_v1, new_v3))
+        new_face = Face(v1, v3, new_v3)
+        if new_face not in new_faces:
+            new_faces.append(new_face)
+
+        new_face = Face(v1, new_v1, new_v3)
+        if new_face not in new_faces:
+            new_faces.append(new_face)
 
     return new_vertices, new_faces
 
 
 def create_output(vertices, faces, output_file):
+
     with open(output_file, 'w') as file:
-        
         file.write(FILE_HEADER)
         file.write(OBJ_NAME)
-        
+
         for v in vertices:
             file.write(str(v) + '\n')
 
         file.write(SMOOTH_SHADING)
 
         for f in faces:
-            file.write(str(f)  + '\n')
+            file.write(str(f) + '\n')
+
 
 def extrude(input_file, output_file, length):
 
@@ -178,7 +221,8 @@ def extrude(input_file, output_file, length):
 if __name__ == '__main__':
     if len(argv) != 4:
         print('Usage: ./extrude <input.obj> <output.obj> <length>')
-        exit()
+        #exit()
+        extrude('input.obj','output.obj',1)
     elif argv[1].endswith('.obj') and argv[2].endswith('.obj'):
         try:
             length = float(argv[3])
