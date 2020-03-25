@@ -218,5 +218,5 @@ if __name__ == '__main__':
         print('\nDone! Mesh saved in ' + argv[2])
         print('\n===========================================\n')
     else:
-        print('> Error: input and output files must have .obj extension')
+        print('Error: input and output files must have .obj extension')
         exit()
