@@ -6,7 +6,7 @@
 
 
 from sys import argv
-from math import pow, sqrt
+from math import pow, sqrt, sin, cos
 
 FILE_HEADER = ''
 OBJ_NAME = ''
@@ -84,6 +84,7 @@ def create_output(vertices, faces, output_file):
         for f in faces:
             file.write(str(f) + '\n')
 
+
 def parse_obj(obj_file):
 
     global ID_COUNTER
@@ -115,13 +116,135 @@ def parse_obj(obj_file):
 
     return vertices, faces
 
-def apply_spin(vertices, faces, steps, angle, axis):
-    # TODO
-    pass
+
+def apply_spin(vertices, faces, steps, total_angle, axis):
+    global ID_COUNTER
+
+    new_vertices = []
+    new_faces = []
+
+    # Divide the angle depending on the number of steps
+    angle_step = int(total_angle/steps)
+
+    for i in range(1, angle_step + 1):
+
+        angle = angle_step * i
+
+        for face in faces:
+
+            # Get triangle center
+            center = Vertex(None,
+                            (face.v1.x + face.v2.x + face.v3.x)/3,
+                            (face.v1.y + face.v2.y + face.v3.y)/3,
+                            (face.v1.z + face.v2.z + face.v3.z)/3)
+
+            # Translation matrix to origin
+            t = Vector(0 - center.x, 0 - center.y, 0 - center.z)
+
+            T = [[1, 0, 0, t.x],
+                 [0, 1, 0, t.y],
+                 [0, 0, 1, t.z],
+                 [0, 0, 0, 1]]
+
+            # Translation matrix to original position
+            t2 = Vector(-t.x, -t.y, -t.z)
+
+            T2 = [[1, 0, 0, t2.x],
+                  [0, 1, 0, t2.y],
+                  [0, 0, 1, t2.z],
+                  [0, 0, 0, 1]]
+
+            # Rotation matrix
+            if axis == 'X':
+                # X axis rotation
+                R = [[1, 0, 0, 0],
+                     [0, cos(angle), -sin(angle), 0],
+                     [0, sin(angle), cos(angle), 0],
+                     [0, 0, 0, 1]]
+            elif axis == 'Y':
+                # Y axis rotation
+                R = [[cos(angle), 0, sin(angle), 0],
+                     [0, 1, 0, 0],
+                     [-sin(angle), 0, cos(angle), 0],
+                     [0, 0, 0, 1]]
+            else:
+                # Z axis rotation
+                R = [[cos(angle), -sin(angle), 0, 0],
+                     [sin(angle), cos(angle), 0, 0],
+                     [0, 0, 1, 0],
+                     [0, 0, 0, 1]]
+
+            # Transformation matrix: TM = T2 * R * T
+            TM = mult_matrix(T2, mult_matrix(R, T))
+
+            # GENERATE NEW VERTICES
+            new_face_vertices = []
+
+            for v in face.vertices:
+
+                vertex = [v.x, v.y, v.z, 1]
+                new_vertex_coords = [0, 0, 0, 0]
+
+                for i in range(len(TM)):
+                    for j in range(len(TM[0])):
+                        new_vertex_coords[i] += TM[i][j] * vertex[j]
+
+                new_vertex = Vertex(
+                    None, new_vertex_coords[0], new_vertex_coords[1], new_vertex_coords[2])
+
+                # Check if the vertex was already created
+                if new_vertex not in new_vertices:
+                    new_vertex.id = ID_COUNTER
+                    ID_COUNTER += 1
+                    new_vertices.append(new_vertex)
+                else:
+                    new_vertex = [
+                        v for v in new_vertices if v == new_vertex][0]
+
+                new_face_vertices.append(new_vertex)
+
+            # GENERATE NEW FACES
+            v1 = face.v1
+            v2 = face.v2
+            v3 = face.v3
+
+            new_v1 = new_face_vertices[0]
+            new_v2 = new_face_vertices[1]
+            new_v3 = new_face_vertices[2]
+
+            # New frontal face
+            new_face = Face(new_v1, new_v2, new_v3)
+            if new_face not in new_faces:
+                new_faces.append(new_face)
+
+            # Additional lateral faces
+            new_faces.append(Face(v1, v2, new_v2))
+            new_faces.append(Face(v1, new_v1, new_v2))
+            new_faces.append(Face(v2, v3, new_v3))
+            new_faces.append(Face(v2, new_v2, new_v3))
+            new_faces.append(Face(v1, v3, new_v3))
+            new_faces.append(Face(v1, new_v1, new_v3))
+
+    return new_vertices, new_faces
+
+
+def mult_matrix (A, B):
+    rows_A = len(A)
+    cols_A = len(A[0])
+    rows_B = len(B)
+    cols_B = len(B[0])
+
+    C = [[0 for row in range(cols_B)] for col in range(rows_A)]
+
+    for i in range(rows_A):
+        for j in range(cols_B):
+            for k in range(cols_A):
+                C[i][j] += A[i][k] * B[k][j]
+    return C
 
 
 def spin(input_file, output_file, steps, angle, axis):
-    
+
     # Get data from .obj file
     vertices, faces = parse_obj(input_file)
 
@@ -147,14 +270,15 @@ if __name__ == '__main__':
             print('Error: step and angle arguments must be numbers')
             exit()
 
-        if argv[5] in ['X','Y','Z']:
+        if argv[5] in ['X', 'Y', 'Z']:
             axis = argv[5]
         else:
             print('Error: axis argument must be one of the following: X, Y ,Z')
             exit()
-        
+
         print('\n================ SPIN ================\n')
-        print('Spinning ' + argv[1] + '...\nSteps: ' + steps + '\nAngle: ' + angle + '\nAxis: ' + axis)
+        print('Spinning ' + argv[1] + '...\n> Steps: ' + str(steps) +
+              '\n> Angle: ' + str(angle) + '\n> Axis: ' + str(axis))
         spin(argv[1], argv[2], steps, angle, axis)
         print('\nDone! Mesh saved in ' + argv[2])
         print('\n======================================\n')
