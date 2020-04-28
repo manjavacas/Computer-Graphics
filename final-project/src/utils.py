@@ -5,17 +5,20 @@ Final Project. Antonio Manjavacas.
 3D Utils: Vertex, Vector and Face classes
 """
 
-from math import pow, sqrt
-
 class Vertex:
-    def __init__(self, id, x, y, z):
-        self.id = id
+
+    id = 1
+
+    def __init__(self, x, y, z):
         self.x = x
         self.y = y
         self.z = z
 
+        self.id = Vertex.id
+        Vertex.id += 1
+
     def __str__(self):
-        return 'v' + ' ' + str(self.x) + ' ' + str(self.y) + ' ' + str(self.z)
+        return 'v ' + str(self.x) + ' ' + str(self.y) + ' ' + str(self.z)
 
     def __eq__(self, v):
         if isinstance(v, Vertex):
@@ -23,40 +26,47 @@ class Vertex:
         else:
             return False
 
-
-class Vector:
-    def __init__(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
-        self.module = sqrt(pow(self.x, 2) + pow(self.y, 2) + pow(self.z, 2))
-
-
 class Face:
-    def __init__(self, v1, v2, v3):
+    def __init__(self, v1, v2, v3, v4):
         self.v1 = v1
         self.v2 = v2
         self.v3 = v3
-        self.vertices = [v1, v2, v3]
+        self.v4 = v4
 
-        a = Vector(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z)
-
-        b = Vector(v3.x - v1.x, v3.y - v1.y, v3.z - v1.z)
-
-        n = Vector((a.y * b.z - a.z * b.y),
-                   (a.z * b.x - a.x * b.z),
-                   (a.x * b.y - a.y * b.x))
-
-        self.normal = Vector(n.x/n.module, n.y/n.module, n.z/n.module)
+        self.vertices = [v1,v2,v3,v4]
 
     def __str__(self):
-        return 'f' + ' ' + str(self.v1.id) + ' ' + str(self.v2.id) + ' ' + str(self.v3.id)
+        return 'f ' + str(self.v1.id) + ' ' + str(self.v2.id) + ' ' + str(self.v3.id) + ' ' + str(self.v4.id)
 
-    def __eq__(self, f):
-        if isinstance(f, Face):
-            other_vertices = [f.v1, f.v2, f.v3]
-            return (self.v1 in other_vertices and
-                    self.v2 in other_vertices and
-                    self.v3 in other_vertices)
-        else:
-            return False
+
+class Bar:
+    def __init__(self, name, faces):
+        self.name = name
+        self.faces = faces
+
+    def __str__(self):
+        
+        header = '\no ' + self.name + '\n'
+        
+        vertices = []
+        text_vertices = ''
+        for face in self.faces:
+            if(face.v1 not in vertices):
+                text_vertices += str(face.v1) + '\n'
+                vertices.append(face.v1)
+            if(face.v2 not in vertices):
+                text_vertices += str(face.v2) + '\n'
+                vertices.append(face.v2)
+            if(face.v3 not in vertices):
+                text_vertices += str(face.v3) + '\n'
+                vertices.append(face.v3)
+            if(face.v4 not in vertices):
+                text_vertices += str(face.v4) + '\n'
+                vertices.append(face.v4)
+        
+        text_faces = ''
+        for face in self.faces:
+            text_faces += str(face) + '\n'
+        
+        return header + text_vertices + text_faces
+
