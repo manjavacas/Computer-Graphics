@@ -99,13 +99,13 @@ def plot(name, x, y, z):
     v7 = Vertex(x + WIDTH, y, z + WIDTH)
     v8 = Vertex(x, y, z + WIDTH)
 
-    # Lower face   
+    # lower face   
     bar_faces.append(Face(v1,v2,v3,v4))
 
-    # Top face
+    # top face
     bar_faces.append(Face(v5,v6,v7,v8))
     
-    # Side faces
+    # side faces
     bar_faces.append(Face(v1,v5,v8,v4))
     bar_faces.append(Face(v3,v7,v8,v4))
     bar_faces.append(Face(v2,v6,v7,v3))
@@ -227,13 +227,13 @@ def save_obj(obj_file, countries, bar_groups):
 
 def run(input_file, output_file):
     
-    # Get data from .csv file
+    # get data from .csv file
     countries = parse_csv(input_file)
     
-    # Create barplots from data
+    # create barplots from data
     bar_groups = plot_countries(countries)
 
-    # Generate final .obj file
+    # generate final .obj file
     save_obj(output_file, countries, bar_groups)
 
 if __name__ == '__main__':
