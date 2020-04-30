@@ -14,15 +14,22 @@ from utils import Vertex, Face, Letter_face, Tag, Bar
 from country import Country
 
 
-PATH_LETTERS = './letters/'
+PATH_COUNTRY_LETTERS = './letters/country/'
+PATH_LEGEND_LETTERS = './letters/legend/'
 
 SCALE = 1000 # scale factor
 
 COUNTRY_SEPARATION = 30 # distance between countries
 BAR_SEPARATION = 30 # distance between bars
 LETTER_SEPARATION = 10 # distance between letters
+LEGEND_SEPARATION = 30 # separation between legend and bars
 
 WIDTH = 10 # bar width
+
+FIRST_LEGEND = 'CASES'
+SECOND_LEGEND = 'DEATHS'
+THIRD_LEGEND = 'RECOVERED'
+
 
 """
 Gets the list of countries and their stats from .csv file
@@ -67,7 +74,7 @@ def plot_countries(countries):
         bar_recovered = plot(name, xi, country.recovered, BAR_SEPARATION * 2)
 
         # add country names to barplot
-        tag = add_tag(country.name, xi, BAR_SEPARATION * 3)
+        tag = add_tag(country.name, xi, 0, BAR_SEPARATION * 3)
 
         bar_groups[country.name] = [bar_cases, bar_deaths, bar_recovered, tag]
 
@@ -107,9 +114,9 @@ def plot(name, x, y, z):
     return Bar(name, bar_faces)
 
 """
-Add a named tag to identify the barplot
+Adds a named tag in a given position
 """
-def add_tag(name, x, z):
+def add_tag(name, x, y, z):
 
     tag = Tag(name,[],[])
 
@@ -118,13 +125,17 @@ def add_tag(name, x, z):
 
     for letter in letters:
         
+        if letter == ' ':
+            letter = '_'
+
         # load letter getting its vertices and triangular faces
-        letter_obj = PATH_LETTERS + letter.upper() + '.obj'
+        letter_obj = PATH_COUNTRY_LETTERS + letter.upper() + '.obj'
         letter_vertices, letter_faces = parse_obj(letter_obj)
 
         # apply vertex offset
         for vertex in letter_vertices:
             vertex.x += x
+            vertex.y += y
             vertex.z += z + i * LETTER_SEPARATION
         
         # add letter vertices and faces to tag
@@ -134,6 +145,39 @@ def add_tag(name, x, z):
         i += 1
 
     return tag
+
+"""
+Adds a named tag in a given position
+"""
+def add_legend(name, x, y, z):
+
+    tag = Tag(name,[],[])
+
+    i = 1
+    letters = name[::-1]
+
+    for letter in letters:
+
+        if letter == ' ':
+            letter = '_'
+        
+        # load letter getting its vertices and triangular faces
+        letter_obj = PATH_LEGEND_LETTERS + letter.upper() + '.obj'
+        letter_vertices, letter_faces = parse_obj(letter_obj)
+
+        # apply vertex offset
+        for vertex in letter_vertices:
+            vertex.x -= x + i * LETTER_SEPARATION
+            vertex.y += y
+            vertex.z += z
+        
+        # add letter vertices and faces to tag
+        tag.vertices.extend(letter_vertices)
+        tag.faces.extend(letter_faces)
+
+        i += 1
+
+    return tag 
 
 """
 Parses an .obj file returning letter vertices and faces
@@ -165,12 +209,21 @@ Saves the set of barplots into an .obj file
 """
 def save_obj(obj_file, countries, bar_groups):
 
+    tag_cases = add_legend(FIRST_LEGEND, LEGEND_SEPARATION, 0, 0)
+    tag_deaths = add_legend(SECOND_LEGEND, LEGEND_SEPARATION, 0, BAR_SEPARATION)
+    tag_recovered = add_legend(THIRD_LEGEND, LEGEND_SEPARATION, 0, BAR_SEPARATION * 2)
+
     with open(obj_file, 'w') as f:
         for country in countries:
+            # country data
             f.write(str(bar_groups[country.name][0]))
             f.write(str(bar_groups[country.name][1]))
             f.write(str(bar_groups[country.name][2]))
             f.write(str(bar_groups[country.name][3]))
+        # legend
+        f.write(str(tag_cases))
+        f.write(str(tag_deaths))
+        f.write(str(tag_recovered))
 
 def run(input_file, output_file):
     
