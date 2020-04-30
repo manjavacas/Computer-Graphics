@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 
 """
@@ -11,13 +10,18 @@ import csv
 
 from sys import argv
 
-from utils import Vertex, Face, Bar
+from utils import Vertex, Face, Letter_face, Tag, Bar
 from country import Country
+
+
+PATH_LETTERS = './letters/'
 
 SCALE = 1000 # scale factor
 
-X_SEPARATION = 30 # distance between countries
-Y_SEPARATION = 30 # distance between bars
+COUNTRY_SEPARATION = 30 # distance between countries
+BAR_SEPARATION = 30 # distance between bars
+LETTER_SEPARATION = 10 # distance between letters
+
 WIDTH = 10 # bar width
 
 """
@@ -49,23 +53,26 @@ def plot_countries(countries):
     bar_groups = {}
 
     for country in countries:
-        
+
         # first dimension
         name = country.name + '_cases'
         bar_cases = plot(name, xi, country.cases, 0)
 
         # second dimension
         name = country.name + '_deaths'
-        bar_deaths = plot(name, xi, country.deaths, Y_SEPARATION)
+        bar_deaths = plot(name, xi, country.deaths, BAR_SEPARATION)
         
         # third dimension
         name = country.name + '_recovered'
-        bar_recovered = plot(name, xi, country.recovered, Y_SEPARATION * 2)
-        
-        xi += X_SEPARATION
+        bar_recovered = plot(name, xi, country.recovered, BAR_SEPARATION * 2)
 
-        bar_groups[country.name] = [bar_cases, bar_deaths, bar_recovered]
-    
+        # add country names to barplot
+        tag = add_tag(country.name, xi, BAR_SEPARATION * 3)
+
+        bar_groups[country.name] = [bar_cases, bar_deaths, bar_recovered, tag]
+
+        xi += COUNTRY_SEPARATION
+
     return bar_groups
 
 """
@@ -99,19 +106,71 @@ def plot(name, x, y, z):
 
     return Bar(name, bar_faces)
 
-def add_tags():
-    pass
+"""
+Add a named tag to identify the barplot
+"""
+def add_tag(name, x, z):
+
+    tag = Tag(name,[],[])
+
+    i = 1
+    letters = name[::-1]
+
+    for letter in letters:
+        
+        # load letter getting its vertices and triangular faces
+        letter_obj = PATH_LETTERS + letter.upper() + '.obj'
+        letter_vertices, letter_faces = parse_obj(letter_obj)
+
+        # apply vertex offset
+        for vertex in letter_vertices:
+            vertex.x += x
+            vertex.z += z + i * LETTER_SEPARATION
+        
+        # add letter vertices and faces to tag
+        tag.vertices.extend(letter_vertices)
+        tag.faces.extend(letter_faces)
+
+        i += 1
+
+    return tag
+
+"""
+Parses an .obj file returning letter vertices and faces
+"""
+def parse_obj(obj_file):
+
+    vertices = []
+    faces = []
+
+    # start from latest vertext id
+    starting_id = Vertex.id - 1
+
+    with open(obj_file, 'r') as f:
+        for line in f:
+            words = line.split()
+            if words[0] == 'v':
+                vertices.append(
+                    Vertex(float(words[1]), float(words[2]), float(words[3])))
+            elif words[0] == 'f':
+                v1 = int(words[1]) + starting_id
+                v2 = int(words[2]) + starting_id
+                v3 = int(words[3]) + starting_id
+                faces.append(Letter_face(v1, v2, v3))
+
+    return vertices, faces
 
 """
 Saves the set of barplots into an .obj file
 """
-def save_obj(obj_file, bar_groups):
+def save_obj(obj_file, countries, bar_groups):
 
     with open(obj_file, 'w') as f:
-        for name in bar_groups:
-            f.write(str(bar_groups[name][0]))
-            f.write(str(bar_groups[name][1]))
-            f.write(str(bar_groups[name][2]))
+        for country in countries:
+            f.write(str(bar_groups[country.name][0]))
+            f.write(str(bar_groups[country.name][1]))
+            f.write(str(bar_groups[country.name][2]))
+            f.write(str(bar_groups[country.name][3]))
 
 def run(input_file, output_file):
     
@@ -121,11 +180,8 @@ def run(input_file, output_file):
     # Create barplots from data
     bar_groups = plot_countries(countries)
 
-    # Add country names to barplot
-    # add_tags()
-
     # Generate final .obj file
-    save_obj(output_file, bar_groups)
+    save_obj(output_file, countries, bar_groups)
 
 if __name__ == '__main__':
     if len(argv) != 3:
