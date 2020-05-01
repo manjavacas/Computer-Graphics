@@ -8,6 +8,13 @@ Final Project. Antonio Manjavacas.
 """
 3D Vertex representation
 """
+
+COLOR_CASES = 'Blue'
+COLOR_DEATHS = 'Red'
+COLOR_RECOVERED = 'Green'
+COLOR_TAG = 'Yellow'
+
+
 class Vertex:
 
     id = 1
@@ -77,11 +84,13 @@ class Tag:
         for v in self.vertices:
             text_vertices += 'v ' + str(v.x) + ' ' + str(v.y) + ' ' + str(v.z) + '\n'
 
+        material = 'usemtl ' + COLOR_TAG + '\n'
+
         text_faces = ''
         for f in self.faces:
             text_faces += 'f ' + str(f.v1) + ' ' + str(f.v2) + ' ' + str(f.v3) + '\n'
 
-        return header + text_vertices + text_faces
+        return header + text_vertices + material + text_faces
 
 
 """
@@ -112,9 +121,17 @@ class Bar:
                 text_vertices += str(face.v4) + '\n'
                 vertices.append(face.v4)
         
+        material = ''
+        if self.name.endswith('_cases'):
+            material += 'usemtl ' + COLOR_CASES + '\n'
+        elif self.name.endswith('_deaths'):
+            material += 'usemtl ' + COLOR_DEATHS + '\n'
+        elif self.name.endswith('_recovered'):
+            material += 'usemtl ' + COLOR_RECOVERED + '\n'
+
         text_faces = ''
         for face in self.faces:
             text_faces += str(face) + '\n'
         
-        return header + text_vertices + text_faces
+        return header + text_vertices + material + text_faces
 

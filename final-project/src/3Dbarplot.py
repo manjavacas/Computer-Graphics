@@ -16,6 +16,7 @@ from country import Country
 
 PATH_COUNTRY_LETTERS = './letters/country/'
 PATH_LEGEND_LETTERS = './letters/legend/'
+PATH_MATERIALS = '../resources/materials/colors.mtl'
 
 SCALE = 1000 # scale factor
 
@@ -214,6 +215,8 @@ def save_obj(obj_file, countries, bar_groups):
     tag_recovered = add_legend(THIRD_LEGEND, LEGEND_SEPARATION, 0, BAR_SEPARATION * 2)
 
     with open(obj_file, 'w') as f:
+        # import materials
+        f.write('mtllib ' + PATH_MATERIALS)
         for country in countries:
             # country data
             f.write(str(bar_groups[country.name][0]))
