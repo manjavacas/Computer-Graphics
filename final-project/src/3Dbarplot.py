@@ -17,6 +17,7 @@ from country import Country
 PATH_COUNTRY_LETTERS = './letters/country/'
 PATH_LEGEND_LETTERS = './letters/legend/'
 PATH_MATERIALS = '../resources/materials/colors.mtl'
+PATH_OUTPUT = '../output/'
 
 SCALE = 1000 # scale factor
 
@@ -237,7 +238,7 @@ def run(input_file, output_file):
     bar_groups = plot_countries(countries)
 
     # generate final .obj file
-    save_obj(output_file, countries, bar_groups)
+    save_obj(PATH_OUTPUT + output_file, countries, bar_groups)
 
 if __name__ == '__main__':
     if len(argv) != 3:
@@ -246,7 +247,7 @@ if __name__ == '__main__':
     elif argv[1].endswith('.csv') and argv[2].endswith('.obj'):
         print('\n================ CREATING 3D BARPLOTS ================\n')
         run(argv[1], argv[2])
-        print('Done and saved in ' + argv[2])
+        print('Done and saved in ' + PATH_OUTPUT + argv[2])
         print('\n======================================================\n')
     else:
         print('Error: input must be a .csv file and output file be an .obj file')
